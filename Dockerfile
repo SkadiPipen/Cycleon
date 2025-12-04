@@ -30,21 +30,28 @@ RUN if [ -f composer.lock ]; then \
         php -d memory_limit=-1 /usr/bin/composer update --no-dev --optimize-autoloader --ignore-platform-reqs --no-scripts; \
     fi
 
-# 5. Copy the rest of the application
-COPY . .
-
-# 6. Run Composer scripts after copying all files
-RUN php -d memory_limit=-1 /usr/bin/composer run-script post-install-cmd --no-interaction || true
-
-# 7. Install Node.js dependencies and build
+# 5. Copy package.json and package-lock.json for npm
 COPY package.json package-lock.json* ./
+
+# 6. Install Node.js dependencies - FIXED APPROACH
+# First update npm to latest
+RUN npm install -g npm@latest
+
+# Install npm dependencies (use npm install instead of npm ci to handle lockfile mismatch)
 RUN if [ -f package-lock.json ]; then \
-        npm ci --only=production; \
+        # Try npm ci first, if it fails use npm install
+        npm ci --only=production --omit=dev || npm install --production --no-audit --no-fund; \
     else \
-        npm install --production; \
+        npm install --production --no-audit --no-fund; \
     fi
 
-# 8. Build assets (if you have build script)
+# 7. Copy the rest of the application
+COPY . .
+
+# 8. Run Composer scripts after copying all files
+RUN php -d memory_limit=-1 /usr/bin/composer run-script post-install-cmd --no-interaction || true
+
+# 9. Build assets (if you have build script)
 RUN npm run build --if-present
 
 CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=${PORT:-8080}"]
