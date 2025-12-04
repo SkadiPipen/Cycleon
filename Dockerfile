@@ -1,19 +1,19 @@
 # Dockerfile
-# Stage 1: Build frontend
-FROM node:18-alpine AS frontend
+# Stage 1: Build frontend with Node 20
+FROM node:20-alpine AS frontend
 
 WORKDIR /app
 
 # Copy package files first
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install ALL dependencies (including devDependencies for build)
+RUN npm ci
 
 # Copy the rest
 COPY . .
 
-# Build with more memory (fix for Render timeout)
+# Build with more memory
 RUN NODE_OPTIONS="--max-old-space-size=4096" npm run build
 
 # Stage 2: Build backend
@@ -28,8 +28,10 @@ RUN apk add --no-cache \
     unzip \
     libzip-dev \
     oniguruma-dev \
+    sqlite \
     && docker-php-ext-install \
         pdo \
+        pdo_sqlite \
         zip \
         mbstring
 
