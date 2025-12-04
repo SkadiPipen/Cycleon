@@ -36,17 +36,16 @@ RUN php -d memory_limit=-1 /usr/bin/composer install --no-dev --optimize-autoloa
 # Install Node dependencies
 RUN npm install --no-audit --no-fund --legacy-peer-deps
 
-# Setup Laravel - FIXED SECTION
+# Setup Laravel - UPDATED SECTION
 RUN if [ -f artisan ]; then \
         # Create .env if it doesn't exist \
-        [ -f .env ] || cp .env.example .env 2>/dev/null || true; \
-        # FORCE PostgreSQL connection (fix the SQLite issue) \
-        sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=pgsql/' .env || true; \
-        sed -i '/DB_DATABASE=.*sqlite/d' .env || true; \
-        sed -i '/DB_DATABASE=.*\.sqlite/d' .env || true; \
+        [ -f .env ] || (cp .env.example .env 2>/dev/null && echo "Created .env from .env.example") || true; \
+        # Ensure PostgreSQL connection \
+        sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=pgsql/' .env 2>/dev/null || true; \
+        sed -i 's/DB_HOST=.*/DB_HOST=host.docker.internal/' .env 2>/dev/null || true; \
         # Generate key \
         php artisan key:generate --force --no-interaction || true; \
-        # Clear cache first, then recache \
+        # Clear cache first \
         php artisan config:clear || true; \
         php artisan route:clear || true; \
         php artisan view:clear || true; \
@@ -59,4 +58,6 @@ RUN if [ -f artisan ]; then \
 # Build assets
 RUN npm run build
 
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8080"]
+# ADD THIS: Wait for database and run migrations on container start
+CMD php artisan migrate --force && \
+    php artisan serve --host=0.0.0.0 --port=8080
