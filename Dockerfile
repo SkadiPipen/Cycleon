@@ -6,7 +6,15 @@ RUN apt-get update && apt-get install -y \
     unzip \
     curl \
     libzip-dev \
-    && docker-php-ext-install zip \
+    libpq-dev \
+    postgresql-client \
+    && docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
+    && docker-php-ext-install \
+        zip \
+        pdo \
+        pdo_pgsql \
+        pgsql \
+        bcmath \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -23,14 +31,22 @@ WORKDIR /var/www/html
 COPY . .
 
 # Install PHP dependencies
-RUN if [ -f composer.lock ]; then \
-        php -d memory_limit=-1 /usr/bin/composer install --no-dev --optimize-autoloader --ignore-platform-reqs; \
-    else \
-        php -d memory_limit=-1 /usr/bin/composer update --no-dev --optimize-autoloader --ignore-platform-reqs; \
-    fi
+RUN php -d memory_limit=-1 /usr/bin/composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 
 # Install Node dependencies
 RUN npm install --no-audit --no-fund --legacy-peer-deps
+
+# Setup Laravel
+RUN if [ -f artisan ]; then \
+        # Create .env if it doesn't exist
+        [ -f .env ] || cp .env.example .env 2>/dev/null || echo "No .env.example found" && \
+        # Generate key
+        php artisan key:generate --force --no-interaction || true; \
+        # Cache configuration
+        php artisan config:cache || true; \
+        php artisan route:cache || true; \
+        php artisan view:cache || true; \
+    fi
 
 # Build assets
 RUN npm run build
