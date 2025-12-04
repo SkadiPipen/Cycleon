@@ -7,7 +7,6 @@ RUN apt-get update && apt-get install -y \
     curl \
     libzip-dev \
     libpq-dev \
-    postgresql-client \
     && docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
     && docker-php-ext-install \
         zip \
@@ -27,8 +26,18 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Copy application
+# Copy application WITHOUT .env (we'll create it)
 COPY . .
+
+# Create .env from .env.example if .env doesn't exist
+RUN if [ ! -f .env ]; then \
+        if [ -f .env.example ]; then \
+            cp .env.example .env; \
+            echo "Created .env from .env.example"; \
+        else \
+            echo "No .env.example found"; \
+        fi; \
+    fi
 
 # Install PHP dependencies
 RUN php -d memory_limit=-1 /usr/bin/composer install --no-dev --optimize-autoloader --ignore-platform-reqs
@@ -36,28 +45,16 @@ RUN php -d memory_limit=-1 /usr/bin/composer install --no-dev --optimize-autoloa
 # Install Node dependencies
 RUN npm install --no-audit --no-fund --legacy-peer-deps
 
-# Setup Laravel - UPDATED SECTION
+# Setup Laravel - NO CONFIG CACHING!
 RUN if [ -f artisan ]; then \
-        # Create .env if it doesn't exist \
-        [ -f .env ] || (cp .env.example .env 2>/dev/null && echo "Created .env from .env.example") || true; \
-        # Ensure PostgreSQL connection \
-        sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=pgsql/' .env 2>/dev/null || true; \
-        sed -i 's/DB_HOST=.*/DB_HOST=host.docker.internal/' .env 2>/dev/null || true; \
-        # Generate key \
-        php artisan key:generate --force --no-interaction || true; \
-        # Clear cache first \
-        php artisan config:clear || true; \
-        php artisan route:clear || true; \
-        php artisan view:clear || true; \
-        # Cache configuration \
-        php artisan config:cache || true; \
-        php artisan route:cache || true; \
-        php artisan view:cache || true; \
+        # Generate app key \
+        php artisan key:generate --force --no-interaction 2>/dev/null || true; \
+        # Clear any cached config \
+        php artisan config:clear 2>/dev/null || true; \
     fi
 
 # Build assets
 RUN npm run build
 
-# ADD THIS: Wait for database and run migrations on container start
-CMD php artisan migrate --force && \
-    php artisan serve --host=0.0.0.0 --port=8080
+# Start command - NO CONFIG CACHING HERE EITHER!
+CMD php artisan serve --host=0.0.0.0 --port=8080
