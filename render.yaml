@@ -1,13 +1,18 @@
-# render.yaml - put this in your project root
+# render.yaml
 services:
   - type: web
     name: cycleon
-    env: php
+    env: node
     buildCommand: |
-      composer install --no-dev --optimize-autoloader
+      # Install PHP and dependencies
+      apt-get update
+      apt-get install -y php8.2 php8.2-common php8.2-mbstring php8.2-xml php8.2-zip php8.2-curl composer
+      # Build the application
       npm ci
       npm run build
-    startCommand: php artisan serve --host=0.0.0.0 --port=$PORT
+      composer install --no-dev --optimize-autoloader --ignore-platform-reqs
+      php artisan key:generate --force
+    startCommand: npm start
     envVars:
       - key: APP_ENV
         value: production
@@ -15,3 +20,9 @@ services:
         value: false
       - key: APP_KEY
         generateValue: true
+      - key: DB_CONNECTION
+        value: sqlite
+      - key: NODE_OPTIONS
+        value: --max-old-space-size=4096
+    healthCheckPath: /
+    autoDeploy: true
