@@ -1,19 +1,20 @@
-FROM php:8.2-cli
+FROM php:8.5-cli
 
-# Install Node.js
+# 1. Install Node.js
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y nodejs
 
-# Install Composer
+# 2. Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+# 3. Copy your code
 WORKDIR /var/www/html
 COPY . .
 
-# Install all dependencies and build
-RUN composer install --no-dev --optimize-autoloader \
+# 4. Install everything and build - WITH PHP 8.4 FLAG
+RUN composer install --no-dev --optimize-autoloader --ignore-platform-reqs \
     && npm ci \
     && npm run build
 
-# Start server on Render's dynamic port
+# 5. Start the server
 CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=${PORT:-8080}"]
