@@ -26,18 +26,8 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Copy application WITHOUT .env (we'll create it)
+# Copy application
 COPY . .
-
-# Create .env from .env.example if .env doesn't exist
-RUN if [ ! -f .env ]; then \
-        if [ -f .env.example ]; then \
-            cp .env.example .env; \
-            echo "Created .env from .env.example"; \
-        else \
-            echo "No .env.example found"; \
-        fi; \
-    fi
 
 # Install PHP dependencies
 RUN php -d memory_limit=-1 /usr/bin/composer install --no-dev --optimize-autoloader --ignore-platform-reqs
@@ -45,16 +35,11 @@ RUN php -d memory_limit=-1 /usr/bin/composer install --no-dev --optimize-autoloa
 # Install Node dependencies
 RUN npm install --no-audit --no-fund --legacy-peer-deps
 
-# Setup Laravel - NO CONFIG CACHING!
-RUN if [ -f artisan ]; then \
-        # Generate app key \
-        php artisan key:generate --force --no-interaction 2>/dev/null || true; \
-        # Clear any cached config \
-        php artisan config:clear 2>/dev/null || true; \
-    fi
-
 # Build assets
 RUN npm run build
 
-# Start command - NO CONFIG CACHING HERE EITHER!
-CMD php artisan serve --host=0.0.0.0 --port=8080
+# Expose port for Render
+EXPOSE 10000
+
+# Simple start command
+CMD php artisan serve --host=0.0.0.0 --port=10000
