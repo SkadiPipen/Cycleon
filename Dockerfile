@@ -29,9 +29,9 @@ RUN php -d memory_limit=-1 /usr/bin/composer install --no-dev --optimize-autoloa
 # Clear any existing config cache
 RUN php artisan config:clear
 
-# IMPORTANT: Set APP_URL to HTTPS during build
+# IMPORTANT: Set URLs to HTTPS during build
 ENV APP_URL=https://cycleonn.onrender.com
-ENV ASSET_URL=https://cycleonn.onrender.com  # CRITICAL FOR ASSETS
+ENV ASSET_URL=https://cycleonn.onrender.com
 
 # Build assets with correct URL
 RUN npm install --no-audit --no-fund --legacy-peer-deps
