@@ -5,8 +5,6 @@ import react from '@vitejs/plugin-react';
 import laravel from 'laravel-vite-plugin';
 import { defineConfig } from 'vite';
 
-const isProduction = process.env.NODE_ENV === 'production';
-
 export default defineConfig({
     plugins: [
         laravel({
@@ -20,8 +18,10 @@ export default defineConfig({
             formVariants: true,
         }),
     ],
-    esbuild: {
-        jsx: 'automatic',
+
+    // 🚀 Required so assets resolve correctly in production
+    build: {
+        manifest: true,
+        sourcemap: false,
     },
-    base: isProduction ? 'https://cycleonn.onrender.com/build/' : '/',
 });
