@@ -13,9 +13,6 @@ Route::get('grow-a-garden', function () {
     return Inertia::render('grow-a-garden', []);
 })->name('grow-a-garden');
 
-Route::get('steal-a-brainrot', function () {
-    return Inertia::render('steal-a-brainrot', []);
-})->name('steal-a-brainrot');
 
 // Stock endpoints
 Route::get('/proxy/stock/grow-a-garden', [StockController::class, 'proxy'])->defaults('game', 'grow-a-garden');

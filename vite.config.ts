@@ -5,14 +5,14 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 
 export default defineConfig({
+    // Fix mixed content by forcing relative URLs
+    base: '',
+
     plugins: [
         laravel({
-            input: [
-                'resources/js/app.tsx',   // main React entry
-            ],
+            input: ['resources/js/app.tsx'],
             refresh: true,
         }),
-
         react(),
     ],
 
@@ -25,38 +25,16 @@ export default defineConfig({
     server: {
         host: true,
         port: 5173,
-
         proxy: {
-            // Stock data proxy
-            '/proxy/stock/grow-a-garden': {
+            '/proxy': {
                 target: 'https://gagapi.onrender.com',
                 changeOrigin: true,
-                rewrite: () => '/stock/grow-a-garden'
+                rewrite: (path) => path.replace(/^\/proxy/, ''),
             },
-
-            // Weather/events proxy
-            '/proxy/events/grow-a-garden': {
-                target: 'https://gagapi.onrender.com',
-                changeOrigin: true,
-                rewrite: () => '/events/grow-a-garden'
-            },
-
-            // Optional: If you have other proxied endpoints
-            '/proxy/': {
-                target: 'https://gagapi.onrender.com',
-                changeOrigin: true,
-                rewrite: (path) => path.replace(/^\/proxy/, '')
-            }
         },
     },
 
-    // Recommended for TypeScript + JSX performance
     esbuild: {
-        jsxInject: `import React from 'react'`,
-    },
-
-    // Optional: speed up HMR in large projects
-    optimizeDeps: {
-        include: ['react', 'react-dom'],
+        jsx: 'automatic',
     },
 });
