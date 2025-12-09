@@ -24,8 +24,14 @@ WORKDIR /var/www/html
 # Copy project files
 COPY . .
 
-# Install PHP dependencies
-RUN php -d memory_limit=-1 /usr/bin/composer install --no-dev --optimize-autoloader --ignore-platform-reqs
+# Install PHP dependencies without running scripts (avoids DB errors)
+RUN php -d memory_limit=-1 /usr/bin/composer install --no-dev --optimize-autoloader --ignore-platform-reqs --no-scripts
+
+# Clear Laravel caches manually
+RUN php artisan config:clear \
+ && php artisan route:clear \
+ && php artisan view:clear \
+ && php artisan cache:clear
 
 # Install Node.js packages and build frontend
 RUN npm install --no-audit --no-fund --legacy-peer-deps
