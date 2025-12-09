@@ -27,12 +27,6 @@ COPY . .
 # Install PHP dependencies
 RUN php -d memory_limit=-1 /usr/bin/composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 
-# Clear Laravel caches to prevent DB errors
-RUN php artisan config:clear \
- && php artisan route:clear \
- && php artisan view:clear \
- && php artisan cache:clear
-
 # Install Node.js packages and build frontend
 RUN npm install --no-audit --no-fund --legacy-peer-deps
 RUN npm run build
