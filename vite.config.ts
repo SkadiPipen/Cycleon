@@ -1,40 +1,27 @@
-import { defineConfig } from 'vite';
-import laravel from 'laravel-vite-plugin';
-import react from '@vitejs/plugin-react';
+import { wayfinder } from '@laravel/vite-plugin-wayfinder';
 // @ts-ignore
-import path from 'path';
+import tailwindcss from '@tailwindcss/vite';
+import react from '@vitejs/plugin-react';
+import laravel from 'laravel-vite-plugin';
+import { defineConfig } from 'vite';
+
+const isProduction = process.env.NODE_ENV === 'production';
 
 export default defineConfig({
-    // Fix mixed content by forcing relative URLs
-    base: '',
-
     plugins: [
         laravel({
-            input: ['resources/js/app.tsx'],
+            input: ['resources/css/app.css', 'resources/js/app.tsx'],
+            ssr: 'resources/js/ssr.tsx',
             refresh: true,
         }),
         react(),
+        tailwindcss(),
+        wayfinder({
+            formVariants: true,
+        }),
     ],
-
-    resolve: {
-        alias: {
-            '@': path.resolve(__dirname, 'resources/js'),
-        },
-    },
-
-    server: {
-        host: true,
-        port: 5173,
-        proxy: {
-            '/proxy': {
-                target: 'https://gagapi.onrender.com',
-                changeOrigin: true,
-                rewrite: (path) => path.replace(/^\/proxy/, ''),
-            },
-        },
-    },
-
     esbuild: {
         jsx: 'automatic',
     },
+    base: isProduction ? 'https://cycleonn.onrender.com/build/' : '/',
 });
