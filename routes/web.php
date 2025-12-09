@@ -22,5 +22,3 @@ Route::get('/proxy/stock', [StockController::class, 'proxy'])->defaults('game', 
 Route::get('/proxy/events/grow-a-garden', [EventsController::class, 'proxy'])->defaults('game', 'grow-a-garden');
 Route::get('/proxy/events', [EventsController::class, 'proxy'])->defaults('game', 'grow-a-garden');
 
-require __DIR__.'/settings.php';
-require __DIR__.'/auth.php';
