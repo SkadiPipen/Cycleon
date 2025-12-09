@@ -1,19 +1,16 @@
-FROM php:8.3-cli
+# Use PHP-FPM for production
+FROM php:8.3-fpm
 
 # System dependencies
 RUN apt-get update && apt-get install -y \
-    curl git unzip libzip-dev build-essential python3 \
+    curl git unzip libzip-dev build-essential nodejs npm python3 \
     && docker-php-ext-install zip bcmath \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Node
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y nodejs
-
-# Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
+# Set working directory
 WORKDIR /var/www/html
+
+# Copy project
 COPY . .
 
 # PHP dependencies
@@ -24,8 +21,10 @@ RUN npm install --legacy-peer-deps
 RUN npm run build
 
 # Fix permissions
-RUN chmod -R 777 storage bootstrap/cache
+RUN chown -R www-data:www-data storage bootstrap/cache
 
+# Expose port Render will use
 EXPOSE 10000
 
-CMD php artisan serve --host=0.0.0.0 --port=${PORT:-10000}
+# Start PHP-FPM
+CMD ["php-fpm"]
